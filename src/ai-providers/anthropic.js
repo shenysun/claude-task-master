@@ -17,7 +17,8 @@ import { log } from '../../scripts/modules/utils.js'; // Assuming utils is acces
 // Remove the global variable and caching logic
 // let anthropicClient;
 
-function getClient(apiKey) {
+function getClient(params) {
+	const { apiKey, baseURL } = params;
 	if (!apiKey) {
 		// In a real scenario, this would use the config resolver.
 		// Throwing error here if key isn't passed for simplicity.
@@ -29,8 +30,8 @@ function getClient(apiKey) {
 	// TODO: Explore passing options like default headers if needed
 	// Create and return a new instance directly with standard version header
 	return createAnthropic({
-		apiKey: apiKey,
-		baseURL: 'https://api.anthropic.com/v1',
+		apiKey,
+		baseURL: baseURL ?? 'https://api.anthropic.com/v1',
 		// Use standard version header instead of beta
 		headers: {
 			'anthropic-beta': 'output-128k-2025-02-19'
@@ -54,16 +55,11 @@ function getClient(apiKey) {
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If the API call fails.
  */
-export async function generateAnthropicText({
-	apiKey,
-	modelId,
-	messages,
-	maxTokens,
-	temperature
-}) {
+export async function generateAnthropicText(params) {
+	const { modelId, messages, maxTokens, temperature } = params;
 	log('debug', `Generating Anthropic text with model: ${modelId}`);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 		const result = await generateText({
 			model: client(modelId),
 			messages: messages,
@@ -96,16 +92,11 @@ export async function generateAnthropicText({
  * @returns {Promise<object>} The full stream result object from the Vercel AI SDK.
  * @throws {Error} If the API call fails to initiate the stream.
  */
-export async function streamAnthropicText({
-	apiKey,
-	modelId,
-	messages,
-	maxTokens,
-	temperature
-}) {
+export async function streamAnthropicText(params) {
+	const { modelId, messages, maxTokens, temperature } = params;
 	log('debug', `Streaming Anthropic text with model: ${modelId}`);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 
 		// --- DEBUG LOGGING --- >>
 		log(
@@ -163,22 +154,22 @@ export async function streamAnthropicText({
  * @returns {Promise<object>} The generated object matching the schema.
  * @throws {Error} If generation or validation fails.
  */
-export async function generateAnthropicObject({
-	apiKey,
-	modelId,
-	messages,
-	schema,
-	objectName = 'generated_object',
-	maxTokens,
-	temperature,
-	maxRetries = 3
-}) {
+export async function generateAnthropicObject(params) {
+	const {
+		modelId,
+		messages,
+		schema,
+		objectName,
+		maxTokens,
+		temperature,
+		maxRetries
+	} = params;
 	log(
 		'debug',
 		`Generating Anthropic object ('${objectName}') with model: ${modelId}`
 	);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 
 		// Log basic debug info
 		log(

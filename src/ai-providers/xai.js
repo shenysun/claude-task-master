@@ -9,13 +9,15 @@ import { generateText, streamText, generateObject } from 'ai'; // Only import wh
 import { log } from '../../scripts/modules/utils.js'; // Assuming utils is accessible
 
 // --- Client Instantiation ---
-function getClient(apiKey) {
+function getClient(params) {
+	const { apiKey, baseURL } = params;
 	if (!apiKey) {
 		throw new Error('xAI API key is required.');
 	}
 	// Create and return a new instance directly
 	return createXai({
-		apiKey: apiKey
+		apiKey: apiKey,
+		baseURL: baseURL
 		// Add baseURL or other options if needed later
 	});
 }
@@ -34,16 +36,11 @@ function getClient(apiKey) {
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If the API call fails.
  */
-export async function generateXaiText({
-	apiKey,
-	modelId,
-	messages,
-	maxTokens,
-	temperature
-}) {
+export async function generateXaiText(params) {
+	const { modelId, messages, maxTokens, temperature } = params;
 	log('debug', `Generating xAI text with model: ${modelId}`);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 		const result = await generateText({
 			model: client(modelId), // Correct model invocation
 			messages: messages,
@@ -73,16 +70,11 @@ export async function generateXaiText({
  * @returns {Promise<object>} The full stream result object from the Vercel AI SDK.
  * @throws {Error} If the API call fails to initiate the stream.
  */
-export async function streamXaiText({
-	apiKey,
-	modelId,
-	messages,
-	maxTokens,
-	temperature
-}) {
+export async function streamXaiText(params) {
+	const { modelId, messages, maxTokens, temperature } = params;
 	log('debug', `Streaming xAI text with model: ${modelId}`);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 		const stream = await streamText({
 			model: client(modelId), // Correct model invocation
 			messages: messages,
@@ -113,22 +105,22 @@ export async function streamXaiText({
  * @returns {Promise<object>} The generated object matching the schema.
  * @throws {Error} If generation or validation fails.
  */
-export async function generateXaiObject({
-	apiKey,
-	modelId,
-	messages,
-	schema,
-	objectName = 'generated_xai_object',
-	maxTokens,
-	temperature,
-	maxRetries = 3
-}) {
+export async function generateXaiObject(params) {
+	const {
+		modelId,
+		messages,
+		schema,
+		objectName = 'generated_xai_object',
+		maxTokens,
+		temperature,
+		maxRetries = 3
+	} = params;
 	log(
 		'warn', // Log warning as this is likely unsupported
 		`Attempting to generate xAI object ('${objectName}') with model: ${modelId}. This may not be supported by the provider.`
 	);
 	try {
-		const client = getClient(apiKey);
+		const client = getClient(params);
 		const result = await generateObject({
 			model: client(modelId), // Correct model invocation
 			// Note: mode might need adjustment if xAI ever supports object generation differently

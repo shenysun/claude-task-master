@@ -173,6 +173,27 @@ function _resolveApiKey(providerName, session, projectRoot = null) {
 	return apiKey;
 }
 
+function _resolveBaseURL(providerName, session, projectRoot = null) {
+	const keyMap = {
+		openai: 'OPENAI_API_BASE_URL',
+		anthropic: 'ANTHROPIC_API_BASE_URL',
+		google: 'GOOGLE_API_BASE_URL',
+		perplexity: 'PERPLEXITY_API_BASE_URL',
+		mistral: 'MISTRAL_API_BASE_URL',
+		azure: 'AZURE_OPENAI_API_BASE_URL',
+		openrouter: 'OPENROUTER_API_BASE_URL',
+		xai: 'XAI_API_BASE_URL'
+	};
+
+	const envVarName = keyMap[providerName];
+	if (!envVarName) {
+		return undefined;
+	}
+
+	const baseUrl = resolveEnvVariable(envVarName, session, projectRoot);
+	return baseUrl ?? undefined;
+}
+
 /**
  * Internal helper to attempt a provider-specific AI API call with retries.
  *
@@ -362,7 +383,14 @@ async function _unifiedServiceRunner(serviceType, params) {
 				effectiveProjectRoot
 			);
 
-			// 4. Construct Messages Array
+			// 4. Resolve Base URL (will throw if required and missing)
+			const baseURL = _resolveBaseURL(
+				providerName?.toLowerCase(),
+				session,
+				effectiveProjectRoot
+			);
+
+			// 5. Construct Messages Array
 			const messages = [];
 			if (systemPrompt) {
 				messages.push({ role: 'system', content: systemPrompt });
@@ -397,6 +425,7 @@ async function _unifiedServiceRunner(serviceType, params) {
 			// 5. Prepare call parameters (using messages array)
 			const callParams = {
 				apiKey,
+				baseURL,
 				modelId,
 				maxTokens: roleParams.maxTokens,
 				temperature: roleParams.temperature,

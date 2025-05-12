@@ -2,6 +2,11 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { generateText, streamText, generateObject } from 'ai';
 import { log } from '../../scripts/modules/utils.js'; // Assuming utils.js is in scripts/modules
 
+function getClient(params) {
+	const { apiKey, baseURL } = params;
+	return createOpenRouter({ apiKey, baseURL });
+}
+
 /**
  * Generates text using an OpenRouter chat model.
  *
@@ -14,21 +19,23 @@ import { log } from '../../scripts/modules/utils.js'; // Assuming utils.js is in
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If the API call fails.
  */
-async function generateOpenRouterText({
-	apiKey,
-	modelId,
-	messages,
-	maxTokens,
-	temperature,
-	...rest // Capture any other Vercel AI SDK compatible parameters
-}) {
+async function generateOpenRouterText(params) {
+	const {
+		apiKey,
+		modelId,
+		messages,
+		maxTokens,
+		temperature,
+		...rest // Capture any other Vercel AI SDK compatible parameters
+	} = params;
+
 	if (!apiKey) throw new Error('OpenRouter API key is required.');
 	if (!modelId) throw new Error('OpenRouter model ID is required.');
 	if (!messages || messages.length === 0)
 		throw new Error('Messages array cannot be empty.');
 
 	try {
-		const openrouter = createOpenRouter({ apiKey });
+		const openrouter = getClient(params);
 		const model = openrouter.chat(modelId); // Assuming chat model
 
 		const { text } = await generateText({
@@ -75,7 +82,7 @@ async function streamOpenRouterText({
 		throw new Error('Messages array cannot be empty.');
 
 	try {
-		const openrouter = createOpenRouter({ apiKey });
+		const openrouter = getClient(params);
 		const model = openrouter.chat(modelId);
 
 		// Directly return the stream from the Vercel AI SDK function
@@ -129,7 +136,7 @@ async function generateOpenRouterObject({
 		throw new Error('Messages array cannot be empty.');
 
 	try {
-		const openrouter = createOpenRouter({ apiKey });
+		const openrouter = getClient(params);
 		const model = openrouter.chat(modelId);
 
 		const { object } = await generateObject({

@@ -12,6 +12,11 @@ import { log } from '../../scripts/modules/utils.js'; // Import logging utility
 const DEFAULT_MODEL = 'gemini-2.0-pro'; // Or a suitable default
 const DEFAULT_TEMPERATURE = 0.2; // Or a suitable default
 
+function getClient(params) {
+	const { apiKey, baseURL } = params;
+	return createGoogleGenerativeAI({ apiKey, baseURL });
+}
+
 /**
  * Generates text using a Google AI model.
  *
@@ -24,13 +29,14 @@ const DEFAULT_TEMPERATURE = 0.2; // Or a suitable default
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function generateGoogleText({
-	apiKey,
-	modelId = DEFAULT_MODEL,
-	temperature = DEFAULT_TEMPERATURE,
-	messages,
-	maxTokens // Note: Vercel SDK might handle this differently, needs verification
-}) {
+async function generateGoogleText(params) {
+	const {
+		apiKey,
+		modelId = DEFAULT_MODEL,
+		temperature = DEFAULT_TEMPERATURE,
+		messages,
+		maxTokens // Note: Vercel SDK might handle this differently, needs verification
+	} = params;
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
@@ -38,7 +44,7 @@ async function generateGoogleText({
 
 	try {
 		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = createGoogleGenerativeAI({ apiKey }); // Correct instantiation
+		const googleProvider = getClient(params); // Correct instantiation
 		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
 		const model = googleProvider(modelId); // Correct model retrieval
 
@@ -74,13 +80,14 @@ async function generateGoogleText({
  * @returns {Promise<ReadableStream>} A readable stream of text deltas.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function streamGoogleText({
-	apiKey,
-	modelId = DEFAULT_MODEL,
-	temperature = DEFAULT_TEMPERATURE,
-	messages,
-	maxTokens
-}) {
+async function streamGoogleText(params) {
+	const {
+		apiKey,
+		modelId = DEFAULT_MODEL,
+		temperature = DEFAULT_TEMPERATURE,
+		messages,
+		maxTokens
+	} = params;
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
@@ -88,7 +95,7 @@ async function streamGoogleText({
 
 	try {
 		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = createGoogleGenerativeAI({ apiKey }); // Correct instantiation
+		const googleProvider = getClient(params); // Correct instantiation
 		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
 		const model = googleProvider(modelId); // Correct model retrieval
 
@@ -123,15 +130,15 @@ async function streamGoogleText({
  * @returns {Promise<object>} The generated object matching the schema.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function generateGoogleObject({
-	apiKey,
-	modelId = DEFAULT_MODEL,
-	temperature = DEFAULT_TEMPERATURE,
-	messages,
-	schema,
-	objectName, // Note: Vercel SDK might use this differently or not at all
-	maxTokens
-}) {
+async function generateGoogleObject(params) {
+	const {
+		apiKey,
+		modelId = DEFAULT_MODEL,
+		temperature = DEFAULT_TEMPERATURE,
+		messages,
+		schema,
+		maxTokens
+	} = params;
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
@@ -139,7 +146,7 @@ async function generateGoogleObject({
 
 	try {
 		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = createGoogleGenerativeAI({ apiKey }); // Correct instantiation
+		const googleProvider = getClient(params); // Correct instantiation
 		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
 		const model = googleProvider(modelId); // Correct model retrieval
 
