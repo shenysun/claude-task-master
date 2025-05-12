@@ -1,7 +1,14 @@
-import { createOpenAI, openai } from '@ai-sdk/openai'; // Using openai provider from Vercel AI SDK
-import { generateText, streamText, generateObject } from 'ai'; // Import necessary functions from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'; // Using openai provider from Vercel AI SDK
+import { generateText, streamText, generateObject, JSONParseError } from 'ai'; // Import necessary functions from 'ai'
 import { log } from '../../scripts/modules/utils.js';
 
+function getClient(params) {
+	const { apiKey, baseURL } = params;
+	return createOpenAI({
+		apiKey,
+		baseURL
+	});
+}
 /**
  * Generates text using OpenAI models via Vercel AI SDK.
  *
@@ -23,20 +30,19 @@ export async function generateOpenAIText(params) {
 		throw new Error('Invalid or empty messages array provided for OpenAI.');
 	}
 
-	const openaiClient = createOpenAI({ apiKey });
+	const openaiClient = getClient(params);
 
 	try {
-		const result = await openaiClient.chat(messages, {
-			// Updated: Use openaiClient.chat directly
-			model: modelId,
-			max_tokens: maxTokens,
+		const result = await generateText({
+			model: openaiClient(modelId),
+			messages: messages,
+			maxTokens: maxTokens,
 			temperature
 		});
 
 		// Adjust based on actual Vercel SDK response structure for openaiClient.chat
 		// This might need refinement based on testing the SDK's output.
-		const textContent = result?.choices?.[0]?.message?.content?.trim();
-
+		const textContent = result?.text?.trim();
 		if (!textContent) {
 			log(
 				'warn',
@@ -85,14 +91,13 @@ export async function streamOpenAIText(params) {
 		);
 	}
 
-	const openaiClient = createOpenAI({ apiKey });
+	const openaiClient = getClient(params);
 
 	try {
-		// Use the streamText function from Vercel AI SDK core
-		const stream = await openaiClient.chat.stream(messages, {
-			// Updated: Use openaiClient.chat.stream
-			model: modelId,
-			max_tokens: maxTokens,
+		const stream = streamText({
+			model: openaiClient(modelId),
+			messages: messages,
+			maxTokens: maxTokens,
 			temperature
 		});
 
@@ -145,7 +150,7 @@ export async function generateOpenAIObject(params) {
 	if (!objectName)
 		throw new Error('Object name is required for OpenAI object generation.');
 
-	const openaiClient = createOpenAI({ apiKey });
+	const openaiClient = getClient(params);
 
 	try {
 		// Use the imported generateObject function from 'ai' package
@@ -153,9 +158,20 @@ export async function generateOpenAIObject(params) {
 			model: openaiClient(modelId),
 			schema: schema,
 			messages: messages,
-			mode: 'tool',
-			maxTokens: maxTokens,
-			temperature: temperature
+			mode: 'json',
+			maxTokens,
+			temperature,
+			experimental_repairText: ({ text, error }) => {
+				if (error instanceof JSONParseError) {
+					if (text.includes('```json')) {
+						return Promise.resolve(
+							text.replace('```json', '').replace('```', '')
+						);
+					}
+				}
+
+				return Promise.resolve(null);
+			}
 		});
 
 		log(
