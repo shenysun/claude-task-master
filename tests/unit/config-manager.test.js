@@ -85,7 +85,8 @@ const DEFAULT_CONFIG = {
 		defaultSubtasks: 5,
 		defaultPriority: 'medium',
 		projectName: 'Task Master',
-		ollamaBaseUrl: 'http://localhost:11434/api'
+		ollamaBaseUrl: 'http://localhost:11434/api',
+		responseLanguage: 'English'
 	}
 };
 
@@ -693,7 +694,7 @@ describe('Getter Functions', () => {
 			configManager.getResponseLanguage(MOCK_PROJECT_ROOT);
 
 		// Assert
-		expect(responseLanguage).toBeUndefined();
+		expect(responseLanguage).toBe('English');
 	});
 
 	// Add more tests for other getters (getResearchProvider, getProjectName, etc.)

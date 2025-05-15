@@ -61,7 +61,8 @@ const DEFAULTS = {
 		defaultSubtasks: 5,
 		defaultPriority: 'medium',
 		projectName: 'Task Master',
-		ollamaBaseUrl: 'http://localhost:11434/api'
+		ollamaBaseUrl: 'http://localhost:11434/api',
+		responseLanguage: 'English'
 	}
 };
 

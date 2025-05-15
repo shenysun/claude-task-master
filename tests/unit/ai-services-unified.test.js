@@ -285,31 +285,6 @@ describe('Unified AI Services', () => {
 			expect(mockGenerateAnthropicText).toHaveBeenCalledTimes(1);
 		});
 
-		test('should use default English language when responseLanguage is not configured', async () => {
-			mockGetResponseLanguage.mockReturnValue(undefined);
-			mockGenerateAnthropicText.mockResolvedValue('Response in English');
-
-			const params = {
-				role: 'main',
-				systemPrompt: 'You are an assistant',
-				prompt: 'Hello'
-			};
-			await generateTextService(params);
-
-			expect(mockGenerateAnthropicText).toHaveBeenCalledWith(
-				expect.objectContaining({
-					messages: [
-						{
-							role: 'system',
-							content: expect.stringContaining('Always respond in English')
-						},
-						{ role: 'user', content: 'Hello' }
-					]
-				})
-			);
-			expect(mockGetResponseLanguage).toHaveBeenCalledWith(fakeProjectRoot);
-		});
-
 		test('should use configured responseLanguage in system prompt', async () => {
 			mockGetResponseLanguage.mockReturnValue('中文');
 			mockGenerateAnthropicText.mockResolvedValue('中文回复');

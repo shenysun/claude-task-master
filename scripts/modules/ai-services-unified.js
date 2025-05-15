@@ -365,8 +365,7 @@ async function _unifiedServiceRunner(serviceType, params) {
 
 			// 4. Construct Messages Array
 			const messages = [];
-			const responseLanguage =
-				getResponseLanguage(effectiveProjectRoot) || 'English';
+			const responseLanguage = getResponseLanguage(effectiveProjectRoot);
 			const systemPromptWithLanguage = `${systemPrompt} \n\n Always respond in ${responseLanguage}.`;
 			messages.push({
 				role: 'system',
