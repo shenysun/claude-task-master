@@ -14,7 +14,8 @@ import {
 	getResearchModelId,
 	getFallbackProvider,
 	getFallbackModelId,
-	getParametersForRole
+	getParametersForRole,
+	getResponseLanguage
 } from './config-manager.js';
 import { log, resolveEnvVariable, findProjectRoot } from './utils.js';
 
@@ -393,7 +394,16 @@ async function _unifiedServiceRunner(serviceType, params) {
 			// 5. Construct Messages Array
 			const messages = [];
 			if (systemPrompt) {
-				messages.push({ role: 'system', content: systemPrompt });
+				messages.push({
+					role: 'system',
+					content: `
+					${systemPrompt}\n\nAlways respond in ${getResponseLanguage(projectRoot)}`
+				});
+			} else {
+				messages.push({
+					role: 'system',
+					content: `Always respond in ${getResponseLanguage(projectRoot)}`
+				});
 			}
 
 			// IN THE FUTURE WHEN DOING CONTEXT IMPROVEMENTS
