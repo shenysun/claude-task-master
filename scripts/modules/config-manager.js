@@ -366,6 +366,11 @@ function getOllamaBaseUrl(explicitRoot = null) {
 	return getGlobalConfig(explicitRoot).ollamaBaseUrl;
 }
 
+function getResponseLanguage(explicitRoot = null) {
+	// Directly return value from config
+	return getGlobalConfig(explicitRoot).responseLanguage;
+}
+
 /**
  * Gets model parameters (maxTokens, temperature) for a specific role,
  * considering model-specific overrides from supported-models.json.
@@ -713,6 +718,7 @@ export {
 	getDefaultPriority,
 	getProjectName,
 	getOllamaBaseUrl,
+	getResponseLanguage,
 	getParametersForRole,
 
 	// API Key Checkers (still relevant)
