@@ -24,6 +24,7 @@ import removeTask from './task-manager/remove-task.js';
 import taskExists from './task-manager/task-exists.js';
 import isTaskDependentOn from './task-manager/is-task-dependent.js';
 import setResponseLanguage from './task-manager/response-language.js';
+import { readComplexityReport } from './utils.js';
 
 // Export task manager functions
 export {
@@ -47,5 +48,6 @@ export {
 	findTaskById,
 	taskExists,
 	isTaskDependentOn,
-	setResponseLanguage
+	setResponseLanguage,
+	readComplexityReport
 };
