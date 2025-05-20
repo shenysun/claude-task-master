@@ -623,7 +623,7 @@ describe('Getter Functions', () => {
 
 	test('getResponseLanguage should return responseLanguage from config', () => {
 		// Arrange
-		// 为这个测试准备一个具有responseLanguage属性的配置对象
+		// Prepare a config object with responseLanguage property for this test
 		const configWithLanguage = JSON.stringify({
 			models: {
 				main: { provider: 'openai', modelId: 'gpt-4-turbo' }
@@ -634,7 +634,7 @@ describe('Getter Functions', () => {
 			}
 		});
 
-		// 设置fs.readFileSync以返回我们的测试配置
+		// Set up fs.readFileSync to return our test config
 		fsReadFileSyncSpy.mockImplementation((filePath) => {
 			if (filePath === MOCK_CONFIG_PATH) {
 				return configWithLanguage;
@@ -649,7 +649,7 @@ describe('Getter Functions', () => {
 
 		fsExistsSyncSpy.mockReturnValue(true);
 
-		// 确保getConfig返回新的值而不是缓存的值
+		// Ensure getConfig returns new values instead of cached ones
 		configManager.getConfig(MOCK_PROJECT_ROOT, true);
 
 		// Act
@@ -686,7 +686,7 @@ describe('Getter Functions', () => {
 
 		fsExistsSyncSpy.mockReturnValue(true);
 
-		// 确保getConfig返回新的值而不是缓存的值
+		// Ensure getConfig returns new values instead of cached ones
 		configManager.getConfig(MOCK_PROJECT_ROOT, true);
 
 		// Act
