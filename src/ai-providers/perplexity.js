@@ -10,15 +10,13 @@ import { log } from '../../scripts/modules/utils.js';
 
 // --- Client Instantiation ---
 // Similar to Anthropic, this expects the resolved API key to be passed in.
-function getClient(params) {
-	const { apiKey, baseURL } = params;
+function getClient(apiKey, baseUrl) {
 	if (!apiKey) {
 		throw new Error('Perplexity API key is required.');
 	}
-	// Create and return a new instance directly
 	return createPerplexity({
-		apiKey,
-		baseURL
+		apiKey: apiKey,
+		...(baseUrl && { baseURL: baseUrl })
 	});
 }
 
@@ -33,14 +31,21 @@ function getClient(params) {
  * @param {Array<object>} params.messages - The messages array.
  * @param {number} [params.maxTokens] - Maximum tokens for the response.
  * @param {number} [params.temperature] - Temperature for generation.
+ * @param {string} [params.baseUrl] - Base URL for the Perplexity API.
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If the API call fails.
  */
-export async function generatePerplexityText(params) {
-	const { modelId, messages, maxTokens, temperature } = params;
+export async function generatePerplexityText({
+	apiKey,
+	modelId,
+	messages,
+	maxTokens,
+	temperature,
+	baseUrl
+}) {
 	log('debug', `Generating Perplexity text with model: ${modelId}`);
 	try {
-		const client = getClient(params);
+		const client = getClient(apiKey, baseUrl);
 		const result = await generateText({
 			model: client(modelId),
 			messages: messages,
@@ -51,7 +56,14 @@ export async function generatePerplexityText(params) {
 			'debug',
 			`Perplexity generateText result received. Tokens: ${result.usage.completionTokens}/${result.usage.promptTokens}`
 		);
-		return result.text;
+
+		return {
+			text: result.text,
+			usage: {
+				inputTokens: result.usage.promptTokens,
+				outputTokens: result.usage.completionTokens
+			}
+		};
 	} catch (error) {
 		log('error', `Perplexity generateText failed: ${error.message}`);
 		throw error;
@@ -67,14 +79,21 @@ export async function generatePerplexityText(params) {
  * @param {Array<object>} params.messages - The messages array.
  * @param {number} [params.maxTokens] - Maximum tokens for the response.
  * @param {number} [params.temperature] - Temperature for generation.
+ * @param {string} [params.baseUrl] - Base URL for the Perplexity API.
  * @returns {Promise<object>} The full stream result object from the Vercel AI SDK.
  * @throws {Error} If the API call fails to initiate the stream.
  */
-export async function streamPerplexityText(params) {
-	const { modelId, messages, maxTokens, temperature } = params;
+export async function streamPerplexityText({
+	apiKey,
+	modelId,
+	messages,
+	maxTokens,
+	temperature,
+	baseUrl
+}) {
 	log('debug', `Streaming Perplexity text with model: ${modelId}`);
 	try {
-		const client = getClient(params);
+		const client = getClient(apiKey, baseUrl);
 		const stream = await streamText({
 			model: client(modelId),
 			messages: messages,
@@ -104,20 +123,21 @@ export async function streamPerplexityText(params) {
  * @param {number} [params.maxTokens] - Maximum tokens for the response.
  * @param {number} [params.temperature] - Temperature for generation.
  * @param {number} [params.maxRetries] - Max retries for validation/generation.
+ * @param {string} [params.baseUrl] - Base URL for the Perplexity API.
  * @returns {Promise<object>} The generated object matching the schema.
  * @throws {Error} If generation or validation fails or is unsupported.
  */
-export async function generatePerplexityObject(params) {
-	const {
-		apiKey,
-		modelId,
-		messages,
-		schema,
-		objectName = 'generated_object',
-		maxTokens,
-		temperature,
-		maxRetries = 1 // Lower retries as support might be limited
-	} = params;
+export async function generatePerplexityObject({
+	apiKey,
+	modelId,
+	messages,
+	schema,
+	objectName = 'generated_object',
+	maxTokens,
+	temperature,
+	maxRetries = 1,
+	baseUrl
+}) {
 	log(
 		'debug',
 		`Attempting to generate Perplexity object ('${objectName}') with model: ${modelId}`
@@ -127,8 +147,7 @@ export async function generatePerplexityObject(params) {
 		'generateObject support for Perplexity might be limited or experimental.'
 	);
 	try {
-		const client = getClient(params);
-		// Attempt using generateObject, but be prepared for potential issues
+		const client = getClient(apiKey, baseUrl);
 		const result = await generateObject({
 			model: client(modelId),
 			schema: schema,
@@ -141,7 +160,13 @@ export async function generatePerplexityObject(params) {
 			'debug',
 			`Perplexity generateObject result received. Tokens: ${result.usage.completionTokens}/${result.usage.promptTokens}`
 		);
-		return result.object;
+		return {
+			object: result.object,
+			usage: {
+				inputTokens: result.usage.promptTokens,
+				outputTokens: result.usage.completionTokens
+			}
+		};
 	} catch (error) {
 		log(
 			'error',

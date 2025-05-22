@@ -38,10 +38,10 @@ const LOG_LEVELS = {
 	success: 4
 };
 
-// Get log level from environment or default to info
-const LOG_LEVEL = process.env.LOG_LEVEL
-	? LOG_LEVELS[process.env.LOG_LEVEL.toLowerCase()]
-	: LOG_LEVELS.info;
+// Determine log level from environment variable or default to 'info'
+const LOG_LEVEL = process.env.TASKMASTER_LOG_LEVEL
+	? LOG_LEVELS[process.env.TASKMASTER_LOG_LEVEL.toLowerCase()]
+	: LOG_LEVELS.info; // Default to info
 
 // Create a color gradient for the banner
 const coolGradient = gradient(['#00b4d8', '#0077b6', '#03045e']);
@@ -604,6 +604,43 @@ function createProjectStructure(addAliases, dryRun) {
 				borderColor: 'blue'
 			})
 		);
+	}
+
+	// === Add Response Language Step ===
+	if (!isSilentMode() && !dryRun) {
+		console.log(
+			boxen(chalk.cyan('Configuring Response Language...'), {
+				padding: 0.5,
+				margin: { top: 1, bottom: 0.5 },
+				borderStyle: 'round',
+				borderColor: 'blue'
+			})
+		);
+		log(
+			'info',
+			'Running interactive response language setup. Please input your preferred language.'
+		);
+		try {
+			execSync('npx task-master lang --setup', {
+				stdio: 'inherit',
+				cwd: targetDir
+			});
+			log('success', 'Response Language configured.');
+		} catch (error) {
+			log('error', 'Failed to configure response language:', error.message);
+			log('warn', 'You may need to run "task-master lang --setup" manually.');
+		}
+	} else if (isSilentMode() && !dryRun) {
+		log(
+			'info',
+			'Skipping interactive response language setup in silent (MCP) mode.'
+		);
+		log(
+			'warn',
+			'Please configure response language using "task-master models --set-response-language" or the "models" MCP tool.'
+		);
+	} else if (dryRun) {
+		log('info', 'DRY RUN: Skipping interactive response language setup.');
 	}
 
 	// === Add Model Configuration Step ===

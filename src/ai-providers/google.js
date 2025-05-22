@@ -9,12 +9,17 @@ import { generateText, streamText, generateObject } from 'ai'; // Import from ma
 import { log } from '../../scripts/modules/utils.js'; // Import logging utility
 
 // Consider making model configurable via config-manager.js later
-const DEFAULT_MODEL = 'gemini-2.0-pro'; // Or a suitable default
+const DEFAULT_MODEL = 'gemini-2.5-pro-exp-03-25'; // Or a suitable default
 const DEFAULT_TEMPERATURE = 0.2; // Or a suitable default
 
-function getClient(params) {
-	const { apiKey, baseURL } = params;
-	return createGoogleGenerativeAI({ apiKey, baseURL });
+function getClient(apiKey, baseUrl) {
+	if (!apiKey) {
+		throw new Error('Google API key is required.');
+	}
+	return createGoogleGenerativeAI({
+		apiKey: apiKey,
+		...(baseUrl && { baseURL: baseUrl })
+	});
 }
 
 /**
@@ -29,42 +34,45 @@ function getClient(params) {
  * @returns {Promise<string>} The generated text content.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function generateGoogleText(params) {
-	const {
-		apiKey,
-		modelId = DEFAULT_MODEL,
-		temperature = DEFAULT_TEMPERATURE,
-		messages,
-		maxTokens // Note: Vercel SDK might handle this differently, needs verification
-	} = params;
+async function generateGoogleText({
+	apiKey,
+	modelId = DEFAULT_MODEL,
+	temperature = DEFAULT_TEMPERATURE,
+	messages,
+	maxTokens,
+	baseUrl
+}) {
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
 	log('info', `Generating text with Google model: ${modelId}`);
 
 	try {
-		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = getClient(params); // Correct instantiation
-		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
-		const model = googleProvider(modelId); // Correct model retrieval
-
-		// Construct payload suitable for Vercel SDK's generateText
-		// Note: The exact structure might depend on how messages are passed
+		const googleProvider = getClient(apiKey, baseUrl);
+		const model = googleProvider(modelId);
 		const result = await generateText({
-			model, // Pass the model instance
-			messages, // Pass the messages array directly
+			model,
+			messages,
 			temperature,
-			maxOutputTokens: maxTokens // Map to correct Vercel SDK param if available
+			maxOutputTokens: maxTokens
 		});
 
 		// Assuming result structure provides text directly or within a property
-		return result.text; // Adjust based on actual SDK response
+		// return result.text; // Adjust based on actual SDK response
+		// Return both text and usage
+		return {
+			text: result.text,
+			usage: {
+				inputTokens: result.usage.promptTokens,
+				outputTokens: result.usage.completionTokens
+			}
+		};
 	} catch (error) {
 		log(
 			'error',
 			`Error generating text with Google (${modelId}): ${error.message}`
 		);
-		throw error; // Re-throw for unified service handler
+		throw error;
 	}
 }
 
@@ -80,33 +88,29 @@ async function generateGoogleText(params) {
  * @returns {Promise<ReadableStream>} A readable stream of text deltas.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function streamGoogleText(params) {
-	const {
-		apiKey,
-		modelId = DEFAULT_MODEL,
-		temperature = DEFAULT_TEMPERATURE,
-		messages,
-		maxTokens
-	} = params;
+async function streamGoogleText({
+	apiKey,
+	modelId = DEFAULT_MODEL,
+	temperature = DEFAULT_TEMPERATURE,
+	messages,
+	maxTokens,
+	baseUrl
+}) {
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
 	log('info', `Streaming text with Google model: ${modelId}`);
 
 	try {
-		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = getClient(params); // Correct instantiation
-		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
-		const model = googleProvider(modelId); // Correct model retrieval
-
+		const googleProvider = getClient(apiKey, baseUrl);
+		const model = googleProvider(modelId);
 		const stream = await streamText({
-			model, // Pass the model instance
+			model,
 			messages,
 			temperature,
 			maxOutputTokens: maxTokens
 		});
-
-		return stream; // Return the stream directly
+		return stream;
 	} catch (error) {
 		log(
 			'error',
@@ -130,38 +134,41 @@ async function streamGoogleText(params) {
  * @returns {Promise<object>} The generated object matching the schema.
  * @throws {Error} If API key is missing or API call fails.
  */
-async function generateGoogleObject(params) {
-	const {
-		apiKey,
-		modelId = DEFAULT_MODEL,
-		temperature = DEFAULT_TEMPERATURE,
-		messages,
-		schema,
-		maxTokens
-	} = params;
+async function generateGoogleObject({
+	apiKey,
+	modelId = DEFAULT_MODEL,
+	temperature = DEFAULT_TEMPERATURE,
+	messages,
+	schema,
+	objectName, // Note: Vercel SDK might use this differently or not at all
+	maxTokens,
+	baseUrl
+}) {
 	if (!apiKey) {
 		throw new Error('Google API key is required.');
 	}
 	log('info', `Generating object with Google model: ${modelId}`);
 
 	try {
-		// const google = new GoogleGenerativeAI({ apiKey }); // Incorrect instantiation
-		const googleProvider = getClient(params); // Correct instantiation
-		// const model = google.getGenerativeModel({ model: modelId }); // Incorrect model retrieval
-		const model = googleProvider(modelId); // Correct model retrieval
-
-		const { object } = await generateObject({
-			model, // Pass the model instance
+		const googleProvider = getClient(apiKey, baseUrl);
+		const model = googleProvider(modelId);
+		const result = await generateObject({
+			model,
 			schema,
 			messages,
 			temperature,
 			maxOutputTokens: maxTokens
-			// Note: 'objectName' or 'mode' might not be directly applicable here
-			// depending on how `@ai-sdk/google` handles `generateObject`.
-			// Check SDK docs if specific tool calling/JSON mode needs explicit setup.
 		});
 
-		return object; // Return the parsed object
+		// return object; // Return the parsed object
+		// Return both object and usage
+		return {
+			object: result.object,
+			usage: {
+				inputTokens: result.usage.promptTokens,
+				outputTokens: result.usage.completionTokens
+			}
+		};
 	} catch (error) {
 		log(
 			'error',

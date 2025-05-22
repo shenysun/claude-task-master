@@ -676,6 +676,34 @@ function isConfigFilePresent(explicitRoot = null) {
 }
 
 /**
+ * Gets the user ID from the configuration.
+ * @param {string|null} explicitRoot - Optional explicit path to the project root.
+ * @returns {string|null} The user ID or null if not found.
+ */
+function getUserId(explicitRoot = null) {
+	const config = getConfig(explicitRoot);
+	if (!config.global) {
+		config.global = {}; // Ensure global object exists
+	}
+	if (!config.global.userId) {
+		config.global.userId = '1234567890';
+		// Attempt to write the updated config.
+		// It's important that writeConfig correctly resolves the path
+		// using explicitRoot, similar to how getConfig does.
+		const success = writeConfig(config, explicitRoot);
+		if (!success) {
+			// Log an error or handle the failure to write,
+			// though for now, we'll proceed with the in-memory default.
+			log(
+				'warning',
+				'Failed to write updated configuration with new userId. Please let the developers know.'
+			);
+		}
+	}
+	return config.global.userId;
+}
+
+/**
  * Gets a list of all provider names defined in the MODEL_MAP.
  * @returns {string[]} An array of provider names.
  */
@@ -683,12 +711,19 @@ function getAllProviders() {
 	return Object.keys(MODEL_MAP || {});
 }
 
+function getBaseUrlForRole(role, explicitRoot = null) {
+	const roleConfig = getModelConfigForRole(role, explicitRoot);
+	return roleConfig && typeof roleConfig.baseUrl === 'string'
+		? roleConfig.baseUrl
+		: undefined;
+}
+
 export {
 	// Core config access
 	getConfig,
 	writeConfig,
-	ConfigurationError, // Export custom error type
-	isConfigFilePresent, // Add the new function export
+	ConfigurationError,
+	isConfigFilePresent,
 
 	// Validation
 	validateProvider,
@@ -710,6 +745,7 @@ export {
 	getFallbackModelId,
 	getFallbackMaxTokens,
 	getFallbackTemperature,
+	getBaseUrlForRole,
 
 	// Global setting getters (No env var overrides)
 	getLogLevel,
@@ -721,7 +757,7 @@ export {
 	getOllamaBaseUrl,
 	getResponseLanguage,
 	getParametersForRole,
-
+	getUserId,
 	// API Key Checkers (still relevant)
 	isApiKeySet,
 	getMcpApiKeyStatus,

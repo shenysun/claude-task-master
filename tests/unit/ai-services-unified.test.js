@@ -8,6 +8,32 @@ const mockGetResearchModelId = jest.fn();
 const mockGetFallbackProvider = jest.fn();
 const mockGetFallbackModelId = jest.fn();
 const mockGetParametersForRole = jest.fn();
+const mockGetResponseLanguage = jest.fn();
+const mockGetUserId = jest.fn();
+const mockGetDebugFlag = jest.fn();
+
+// --- Mock MODEL_MAP Data ---
+// Provide a simplified structure sufficient for cost calculation tests
+const mockModelMap = {
+	anthropic: [
+		{
+			id: 'test-main-model',
+			cost_per_1m_tokens: { input: 3, output: 15, currency: 'USD' }
+		},
+		{
+			id: 'test-fallback-model',
+			cost_per_1m_tokens: { input: 3, output: 15, currency: 'USD' }
+		}
+	],
+	perplexity: [
+		{
+			id: 'test-research-model',
+			cost_per_1m_tokens: { input: 1, output: 1, currency: 'USD' }
+		}
+	]
+	// Add other providers/models if needed for specific tests
+};
+const mockGetBaseUrlForRole = jest.fn();
 
 jest.unstable_mockModule('../../scripts/modules/config-manager.js', () => ({
 	getMainProvider: mockGetMainProvider,
@@ -16,7 +42,12 @@ jest.unstable_mockModule('../../scripts/modules/config-manager.js', () => ({
 	getResearchModelId: mockGetResearchModelId,
 	getFallbackProvider: mockGetFallbackProvider,
 	getFallbackModelId: mockGetFallbackModelId,
-	getParametersForRole: mockGetParametersForRole
+	getParametersForRole: mockGetParametersForRole,
+	getResponseLanguage: mockGetResponseLanguage,
+	getUserId: mockGetUserId,
+	getDebugFlag: mockGetDebugFlag,
+	MODEL_MAP: mockModelMap,
+	getBaseUrlForRole: mockGetBaseUrlForRole
 }));
 
 // Mock AI Provider Modules
@@ -44,10 +75,15 @@ jest.unstable_mockModule('../../src/ai-providers/perplexity.js', () => ({
 const mockLog = jest.fn();
 const mockResolveEnvVariable = jest.fn();
 const mockFindProjectRoot = jest.fn();
+const mockIsSilentMode = jest.fn();
+const mockLogAiUsage = jest.fn();
+
 jest.unstable_mockModule('../../scripts/modules/utils.js', () => ({
 	log: mockLog,
 	resolveEnvVariable: mockResolveEnvVariable,
-	findProjectRoot: mockFindProjectRoot
+	findProjectRoot: mockFindProjectRoot,
+	isSilentMode: mockIsSilentMode,
+	logAiUsage: mockLogAiUsage
 }));
 
 // Import the module to test (AFTER mocks)
@@ -75,6 +111,7 @@ describe('Unified AI Services', () => {
 			if (role === 'fallback') return { maxTokens: 150, temperature: 0.6 };
 			return { maxTokens: 100, temperature: 0.5 }; // Default
 		});
+		mockGetResponseLanguage.mockReturnValue('English');
 		mockResolveEnvVariable.mockImplementation((key) => {
 			if (key === 'ANTHROPIC_API_KEY') return 'mock-anthropic-key';
 			if (key === 'PERPLEXITY_API_KEY') return 'mock-perplexity-key';
@@ -83,11 +120,16 @@ describe('Unified AI Services', () => {
 
 		// Set a default behavior for the new mock
 		mockFindProjectRoot.mockReturnValue(fakeProjectRoot);
+		mockGetDebugFlag.mockReturnValue(false);
+		mockGetUserId.mockReturnValue('test-user-id'); // Add default mock for getUserId
 	});
 
 	describe('generateTextService', () => {
 		test('should use main provider/model and succeed', async () => {
-			mockGenerateAnthropicText.mockResolvedValue('Main provider response');
+			mockGenerateAnthropicText.mockResolvedValue({
+				text: 'Main provider response',
+				usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 }
+			});
 
 			const params = {
 				role: 'main',
@@ -97,7 +139,8 @@ describe('Unified AI Services', () => {
 			};
 			const result = await generateTextService(params);
 
-			expect(result).toBe('Main provider response');
+			expect(result.mainResult).toBe('Main provider response');
+			expect(result).toHaveProperty('telemetryData');
 			expect(mockGetMainProvider).toHaveBeenCalledWith(fakeProjectRoot);
 			expect(mockGetMainModelId).toHaveBeenCalledWith(fakeProjectRoot);
 			expect(mockGetParametersForRole).toHaveBeenCalledWith(
@@ -110,16 +153,21 @@ describe('Unified AI Services', () => {
 				fakeProjectRoot
 			);
 			expect(mockGenerateAnthropicText).toHaveBeenCalledTimes(1);
-			expect(mockGenerateAnthropicText).toHaveBeenCalledWith({
-				apiKey: 'mock-anthropic-key',
-				modelId: 'test-main-model',
-				maxTokens: 100,
-				temperature: 0.5,
-				messages: [
-					{ role: 'system', content: 'System' },
-					{ role: 'user', content: 'Test' }
-				]
-			});
+			expect(mockGenerateAnthropicText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					apiKey: 'mock-anthropic-key',
+					modelId: 'test-main-model',
+					maxTokens: 100,
+					temperature: 0.5,
+					messages: [
+						{
+							role: 'system',
+							content: expect.stringContaining('System')
+						},
+						{ role: 'user', content: 'Test' }
+					]
+				})
+			);
 			expect(mockGeneratePerplexityText).not.toHaveBeenCalled();
 		});
 
@@ -127,7 +175,10 @@ describe('Unified AI Services', () => {
 			const mainError = new Error('Main provider failed');
 			mockGenerateAnthropicText
 				.mockRejectedValueOnce(mainError)
-				.mockResolvedValueOnce('Fallback provider response');
+				.mockResolvedValueOnce({
+					text: 'Fallback provider response',
+					usage: { inputTokens: 15, outputTokens: 25, totalTokens: 40 }
+				});
 
 			const explicitRoot = '/explicit/test/root';
 			const params = {
@@ -137,7 +188,8 @@ describe('Unified AI Services', () => {
 			};
 			const result = await generateTextService(params);
 
-			expect(result).toBe('Fallback provider response');
+			expect(result.mainResult).toBe('Fallback provider response');
+			expect(result).toHaveProperty('telemetryData');
 			expect(mockGetMainProvider).toHaveBeenCalledWith(explicitRoot);
 			expect(mockGetFallbackProvider).toHaveBeenCalledWith(explicitRoot);
 			expect(mockGetParametersForRole).toHaveBeenCalledWith(
@@ -173,14 +225,16 @@ describe('Unified AI Services', () => {
 			mockGenerateAnthropicText
 				.mockRejectedValueOnce(mainError)
 				.mockRejectedValueOnce(fallbackError);
-			mockGeneratePerplexityText.mockResolvedValue(
-				'Research provider response'
-			);
+			mockGeneratePerplexityText.mockResolvedValue({
+				text: 'Research provider response',
+				usage: { inputTokens: 20, outputTokens: 30, totalTokens: 50 }
+			});
 
 			const params = { role: 'main', prompt: 'Research fallback test' };
 			const result = await generateTextService(params);
 
-			expect(result).toBe('Research provider response');
+			expect(result.mainResult).toBe('Research provider response');
+			expect(result).toHaveProperty('telemetryData');
 			expect(mockGetMainProvider).toHaveBeenCalledWith(fakeProjectRoot);
 			expect(mockGetFallbackProvider).toHaveBeenCalledWith(fakeProjectRoot);
 			expect(mockGetResearchProvider).toHaveBeenCalledWith(fakeProjectRoot);
@@ -247,22 +301,32 @@ describe('Unified AI Services', () => {
 			const retryableError = new Error('Rate limit');
 			mockGenerateAnthropicText
 				.mockRejectedValueOnce(retryableError) // Fails once
-				.mockResolvedValue('Success after retry'); // Succeeds on retry
+				.mockResolvedValueOnce({
+					// Succeeds on retry
+					text: 'Success after retry',
+					usage: { inputTokens: 5, outputTokens: 10, totalTokens: 15 }
+				});
 
 			const params = { role: 'main', prompt: 'Retry success test' };
 			const result = await generateTextService(params);
 
-			expect(result).toBe('Success after retry');
+			expect(result.mainResult).toBe('Success after retry');
+			expect(result).toHaveProperty('telemetryData');
 			expect(mockGenerateAnthropicText).toHaveBeenCalledTimes(2); // Initial + 1 retry
 			expect(mockLog).toHaveBeenCalledWith(
 				'info',
-				expect.stringContaining('Retryable error detected. Retrying')
+				expect.stringContaining(
+					'Something went wrong on the provider side. Retrying'
+				)
 			);
 		});
 
 		test('should use default project root or handle null if findProjectRoot returns null', async () => {
 			mockFindProjectRoot.mockReturnValue(null); // Simulate not finding root
-			mockGenerateAnthropicText.mockResolvedValue('Response with no root');
+			mockGenerateAnthropicText.mockResolvedValue({
+				text: 'Response with no root',
+				usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 }
+			});
 
 			const params = { role: 'main', prompt: 'No root test' }; // No explicit root passed
 			await generateTextService(params);
@@ -275,6 +339,58 @@ describe('Unified AI Services', () => {
 				null
 			);
 			expect(mockGenerateAnthropicText).toHaveBeenCalledTimes(1);
+		});
+
+		test('should use configured responseLanguage in system prompt', async () => {
+			mockGetResponseLanguage.mockReturnValue('中文');
+			mockGenerateAnthropicText.mockResolvedValue('中文回复');
+
+			const params = {
+				role: 'main',
+				systemPrompt: 'You are an assistant',
+				prompt: 'Hello'
+			};
+			await generateTextService(params);
+
+			expect(mockGenerateAnthropicText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					messages: [
+						{
+							role: 'system',
+							content: expect.stringContaining('Always respond in 中文')
+						},
+						{ role: 'user', content: 'Hello' }
+					]
+				})
+			);
+			expect(mockGetResponseLanguage).toHaveBeenCalledWith(fakeProjectRoot);
+		});
+
+		test('should pass custom projectRoot to getResponseLanguage', async () => {
+			const customRoot = '/custom/project/root';
+			mockGetResponseLanguage.mockReturnValue('Español');
+			mockGenerateAnthropicText.mockResolvedValue('Respuesta en Español');
+
+			const params = {
+				role: 'main',
+				systemPrompt: 'You are an assistant',
+				prompt: 'Hello',
+				projectRoot: customRoot
+			};
+			await generateTextService(params);
+
+			expect(mockGetResponseLanguage).toHaveBeenCalledWith(customRoot);
+			expect(mockGenerateAnthropicText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					messages: [
+						{
+							role: 'system',
+							content: expect.stringContaining('Always respond in Español')
+						},
+						{ role: 'user', content: 'Hello' }
+					]
+				})
+			);
 		});
 
 		// Add more tests for edge cases:
