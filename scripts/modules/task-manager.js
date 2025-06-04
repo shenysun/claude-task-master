@@ -26,6 +26,8 @@ import isTaskDependentOn from './task-manager/is-task-dependent.js';
 import moveTask from './task-manager/move-task.js';
 import { migrateProject } from './task-manager/migrate.js';
 import { readComplexityReport } from './utils.js';
+import setResponseLanguage from './task-manager/response-language.js';
+
 // Export task manager functions
 export {
 	parsePRD,
@@ -50,5 +52,6 @@ export {
 	isTaskDependentOn,
 	moveTask,
 	readComplexityReport,
-	migrateProject
+	migrateProject,
+	setResponseLanguage
 };
