@@ -3,7 +3,9 @@
 import TaskMasterMCPServer from './src/index.js';
 import dotenv from 'dotenv';
 import logger from './src/logger.js';
+import { version } from '../index.js';
 
+logger.info(`MCP server version: ${version}`);
 // Load environment variables
 dotenv.config();
 
