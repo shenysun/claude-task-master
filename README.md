@@ -28,50 +28,125 @@ Using the research model is optional but highly recommended. You will need at le
 
 ## Quick Start
 
-### Option 1 | MCP (Recommended):
+### Option 1: MCP (Recommended)
 
-MCP (Model Control Protocol) provides the easiest way to get started with Task Master directly in your editor.
+MCP (Model Control Protocol) lets you run Task Master directly from your editor.
 
-1. **Add the MCP config to your editor** (Cursor recommended, but it works with other text editors):
+#### 1. Add your MCP config at the following path depending on your editor
 
-```json
+| Editor       | Scope   | Linux/macOS Path                      | Windows Path                                      | Key          |
+| ------------ | ------- | ------------------------------------- | ------------------------------------------------- | ------------ |
+| **Cursor**   | Global  | `~/.cursor/mcp.json`                  | `%USERPROFILE%\.cursor\mcp.json`                  | `mcpServers` |
+|              | Project | `<project_folder>/.cursor/mcp.json`   | `<project_folder>\.cursor\mcp.json`               | `mcpServers` |
+| **Windsurf** | Global  | `~/.codeium/windsurf/mcp_config.json` | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` | `mcpServers` |
+| **VS Code**  | Project | `<project_folder>/.vscode/mcp.json`   | `<project_folder>\.vscode\mcp.json`               | `servers`    |
+
+##### Quick Install for Cursor (One-Click)
+
+[<img src="https://cursor.com/deeplink/mcp-install-dark.png" alt="Add Task Master MCP server to Cursor" style="max-height: 32px;">](cursor://anysphere.cursor-deeplink/mcp/install?name=taskmaster-ai&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIi0tcGFja2FnZT10YXNrLW1hc3Rlci1haSIsInRhc2stbWFzdGVyLWFpIl0sImVudiI6eyJBTlRIUk9QSUNfQVBJX0tFWSI6IllPVVJfQU5USFJPUElDX0FQSV9LRVlfSEVSRSIsIlBFUlBMRVhJVFlfQVBJX0tFWSI6IllPVVJfUEVSUExFWElUWV9BUElfS0VZX0hFUkUiLCJPUEVOQUlfQVBJX0tFWSI6IllPVVJfT1BFTkFJX0tFWV9IRVJFIiwiR09PR0xFX0FQSV9LRVkiOiJZT1VSX0dPT0dMRV9LRVlfSEVSRSIsIk1JU1RSQUxfQVBJX0tFWSI6IllPVVJfTUlTVFJBTF9LRVlfSEVSRSIsIk9QRU5ST1VURVJfQVBJX0tFWSI6IllPVVJfT1BFTlJPVVRFUl9LRVlfSEVSRSIsIlhBSV9BUElfS0VZIjoiWU9VUl9YQUlfS0VZX0hFUkUiLCJBWlVSRV9PUEVOQUJFX0FQSV9LRVkiOiJZT1VSX0FaVVJFX0tFWV9IRVJFIiwiT0xMQU1BX0FQSV9LRVkiOiJZT1VSX09MTEFNQV9BUElfS0VZX0hFUkUifX0%3D)
+
+> **Note:** After clicking the install button, you'll still need to add your API keys to the configuration. The button installs the MCP server with placeholder keys that you'll need to replace with your actual API keys.
+
+##### Manual Configuration
+
+###### Cursor & Windsurf (`mcpServers`)
+
+```jsonc
 {
-	"mcpServers": {
-		"taskmaster-ai": {
-			"command": "npx",
-			"args": ["-y", "--package=task-master-ai", "task-master-ai"],
-			"env": {
-				"ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
-				"PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
-				"OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
-				"GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
-				"MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
-				"OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
-				"XAI_API_KEY": "YOUR_XAI_KEY_HERE",
-				"AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
-				"OLLAMA_API_KEY": "YOUR_OLLAMA_API_KEY_HERE"
-			}
-		}
-	}
+  "mcpServers": {
+    "taskmaster-ai": {
+      "command": "npx",
+      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "env": {
+        "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
+        "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
+        "OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
+        "GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
+        "MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
+        "OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
+        "XAI_API_KEY": "YOUR_XAI_KEY_HERE",
+        "AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
+        "OLLAMA_API_KEY": "YOUR_OLLAMA_API_KEY_HERE"
+      }
+    }
+  }
 }
 ```
 
-2. **Enable the MCP** in your editor
+> 🔑 Replace `YOUR_…_KEY_HERE` with your real API keys. You can remove keys you don't use.
 
-3. **Prompt the AI** to initialize Task Master:
+###### VS Code (`servers` + `type`)
 
+```jsonc
+{
+  "servers": {
+    "taskmaster-ai": {
+      "command": "npx",
+      "args": ["-y", "--package=task-master-ai", "task-master-ai"],
+      "env": {
+        "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
+        "PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
+        "OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
+        "GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
+        "MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
+        "OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
+        "XAI_API_KEY": "YOUR_XAI_KEY_HERE",
+        "AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE"
+      },
+      "type": "stdio"
+    }
+  }
+}
 ```
-Can you please initialize taskmaster-ai into my project?
-```
 
-4. **Use common commands** directly through your AI assistant:
+> 🔑 Replace `YOUR_…_KEY_HERE` with your real API keys. You can remove keys you don't use.
+
+#### 2. (Cursor-only) Enable Taskmaster MCP
+
+Open Cursor Settings (Ctrl+Shift+J) ➡ Click on MCP tab on the left ➡ Enable task-master-ai with the toggle
+
+#### 3. (Optional) Configure the models you want to use
+
+In your editor's AI chat pane, say:
 
 ```txt
-Can you parse my PRD at scripts/prd.txt?
-What's the next task I should work on?
-Can you help me implement task 3?
-Can you help me expand task 4?
+Change the main, research and fallback models to <model_name>, <model_name> and <model_name> respectively.
 ```
+
+[Table of available models](docs/models.md)
+
+#### 4. Initialize Task Master
+
+In your editor's AI chat pane, say:
+
+```txt
+Initialize taskmaster-ai in my project
+```
+
+#### 5. Make sure you have a PRD (Recommended)
+
+For **new projects**: Create your PRD at `.taskmaster/docs/prd.txt`  
+For **existing projects**: You can use `scripts/prd.txt` or migrate with `task-master migrate`
+
+An example PRD template is available after initialization in `.taskmaster/templates/example_prd.txt`.
+
+> [!NOTE]
+> While a PRD is recommended for complex projects, you can always create individual tasks by asking "Can you help me implement [description of what you want to do]?" in chat.
+
+**Always start with a detailed PRD.**
+
+The more detailed your PRD, the better the generated tasks will be.
+
+#### 6. Common Commands
+
+Use your AI assistant to:
+
+- Parse requirements: `Can you parse my PRD at scripts/prd.txt?`
+- Plan next step: `What's the next task I should work on?`
+- Implement a task: `Can you help me implement task 3?`
+- Expand a task: `Can you help me expand task 4?`
+
+[More examples on how to use Task Master in chat](docs/examples.md)
 
 ### Option 2: Using Command Line
 
@@ -125,6 +200,7 @@ For more detailed information, check out the documentation in the `docs` directo
 - [Command Reference](docs/command-reference.md) - Complete list of all available commands
 - [Task Structure](docs/task-structure.md) - Understanding the task format and features
 - [Example Interactions](docs/examples.md) - Common Cursor AI interaction examples
+- [Migration Guide](docs/migration-guide.md) - Guide to migrating to the new project structure
 
 ## Troubleshooting
 
