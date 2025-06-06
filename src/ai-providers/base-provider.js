@@ -1,4 +1,4 @@
-import { generateText, streamText, generateObject } from 'ai';
+import { generateText, streamText, generateObject, JSONParseError } from 'ai';
 import { log } from '../../scripts/modules/index.js';
 
 /**
@@ -191,7 +191,18 @@ export class BaseAIProvider {
 				schema: params.schema,
 				mode: 'tool',
 				maxTokens: params.maxTokens,
-				temperature: params.temperature
+				temperature: params.temperature,
+				experimental_repairText: ({ text, error }) => {
+					if (error instanceof JSONParseError) {
+						if (text.includes('```json')) {
+							return Promise.resolve(
+								text.replace('```json', '').replace('```', '')
+							);
+						}
+					}
+
+					return Promise.resolve(null);
+				}
 			});
 
 			log(

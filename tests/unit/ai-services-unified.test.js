@@ -718,7 +718,9 @@ describe('Unified AI Services', () => {
 		test('should pass custom projectRoot to getResponseLanguage', async () => {
 			const customRoot = '/custom/project/root';
 			mockGetResponseLanguage.mockReturnValue('Español');
-			mockAnthropicProvider.generateText.mockResolvedValue('Respuesta en Español');
+			mockAnthropicProvider.generateText.mockResolvedValue(
+				'Respuesta en Español'
+			);
 
 			const params = {
 				role: 'main',
